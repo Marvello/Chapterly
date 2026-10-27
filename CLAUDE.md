@@ -35,7 +35,7 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   and updates by `rollout restart`; to roll back, point the deployment at a known-good `:sha-…` tag.
 - WebToEpub is pinned ONCE, `ARG WEBTOEPUB_REF` in `worker/Dockerfile`; `worker/setup.sh` (CI + local) reads
   it, so tests run against what ships. Bump it there, re-run `worker/setup.sh`, test, commit.
-- k8s manifest (`../homeserver/k8s/chapterly/`): worker gets only `TZ`/`CHAPTERLY_*` (no auth secrets), memory
+- k8s manifest (`../common-tech/homeserver/k8s/chapterly/`): worker gets only `TZ`/`CHAPTERLY_*` (no auth secrets), memory
   limits + `--max-old-space-size` below the worker's limit, web sets `TRUST_CF_HEADER=1` (Cloudflare tunnel).
 
 ## Library + reader (web/app/_reader, web/lib/reader)
