@@ -17,7 +17,15 @@ function openDb(file = process.env.CHAPTERLY_DB || path.join(__dirname, "..", "d
     const db = new DatabaseSync(file);
     // busy_timeout first: switching to WAL takes a lock, and a second process starting at the same
     // moment (web + worker) must wait for it instead of failing with "database is locked".
-    db.exec("PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;");
+    db.exec("PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;");
+    // Switching a new file to WAL takes an exclusive lock, and when two connections would deadlock on it
+    // SQLite fails at once instead of waiting busy_timeout (seen in CI, ~1 in 100 starts). Retry it for ~5 s.
+    for (let i = 0; ; i++) {
+        try { db.exec("PRAGMA journal_mode = WAL"); break; } catch (e) {
+            if (i >= 50 || !/database is locked/.test(e.message)) throw e;
+            Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+        }
+    }
     migrate(db);
     const one = (sql, ...p) => db.prepare(sql).get(...p);
     const all = (sql, ...p) => db.prepare(sql).all(...p);
