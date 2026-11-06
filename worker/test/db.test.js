@@ -213,6 +213,11 @@ const fresh = name => path.join(tmp, name);
         assert.strictEqual(lib().unread, 3);
         assert.strictEqual(rdb.getProgress(u.id, nid).chapterId, toc[0].id);
 
+        assert.strictEqual(lib().shelf_hidden_read_at, null);
+        rdb.hideFromShelf(u.id, nid);
+        assert.strictEqual(lib().shelf_hidden_read_at, lib().read_at, "hidden at the current read_at");
+        assert.strictEqual(rdb.getProgress(u.id, nid).chapterId, toc[0].id, "hiding keeps progress");
+
         const other = rdb.addNovel("https://example.com/novel/other").id;
         assert.throws(() => rdb.saveProgress(u.id, { novelId: other, chapterId: toc[0].id, fraction: 0,
             readAt: new Date().toISOString(), force: false }), /not in novel/);

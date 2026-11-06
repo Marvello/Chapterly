@@ -34,6 +34,7 @@ export interface ReaderNovel {
   id: number; title: string | null; author: string | null; cover_url: string | null; toc_url: string;
   chapters_fetched: number; unread: number | null; // null in /api/reader/library until the novel is started
   progress_chapter_id: number | null; progress_idx: number | null; progress_fraction: number | null; read_at: string | null;
+  shelf_hidden_read_at?: string | null; // absent in rows cached before migration 010; hidden from "Continue reading" while read_at still equals it
 }
 /** One row of the merged library (the phone caches these): management fields + reading progress. */
 export type LibraryNovel = Omit<LibraryRow, "unread"> & ReaderNovel;
@@ -66,6 +67,7 @@ export interface Db {
   saveCleanHtml(chapterId: number, html: string, cleanVersion: number): void;
   getProgress(userId: number, novelId: number): ReaderPosition | null;
   saveProgress(userId: number, p: ProgressInput): { saved: boolean; position: ReaderPosition | null };
+  hideFromShelf(userId: number, novelId: number): void;
   setEpubEnabled(id: number, on: boolean): void;
   workerSeenAt(): string | null;   // worker_status.seen_at: last worker heartbeat
 }

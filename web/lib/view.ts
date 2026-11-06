@@ -33,8 +33,9 @@ export function displayTitle(n: Pick<NovelRow, "title" | "toc_url">): string {
 }
 
 /** "Continue reading" shelf: started novels, most recently read first. */
-export const continueReading = <T extends Pick<ReaderNovel, "progress_chapter_id" | "read_at">>(rows: T[], max = 6): T[] =>
-  rows.filter(n => n.progress_chapter_id != null)
+export const continueReading = <T extends Pick<ReaderNovel, "progress_chapter_id" | "read_at" | "shelf_hidden_read_at">>(rows: T[], max = 6): T[] =>
+  // Hidden by the user until it's read further (read_at moves past the value it was hidden at).
+  rows.filter(n => n.progress_chapter_id != null && n.shelf_hidden_read_at !== n.read_at)
     .sort((a, b) => (b.read_at ?? "").localeCompare(a.read_at ?? ""))
     .slice(0, max);
 

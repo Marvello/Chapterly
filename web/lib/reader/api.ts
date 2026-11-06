@@ -21,7 +21,8 @@ export function libraryRows(list: LibraryRow[], reading: ReaderNovel[]): Library
     const r = byId.get(n.id);
     const started = r?.progress_chapter_id != null;
     return { ...n, unread: started ? r!.unread : null, progress_chapter_id: r?.progress_chapter_id ?? null,
-      progress_idx: r?.progress_idx ?? null, progress_fraction: r?.progress_fraction ?? null, read_at: r?.read_at ?? null };
+      progress_idx: r?.progress_idx ?? null, progress_fraction: r?.progress_fraction ?? null, read_at: r?.read_at ?? null,
+      shelf_hidden_read_at: r?.shelf_hidden_read_at ?? null };
   });
 }
 

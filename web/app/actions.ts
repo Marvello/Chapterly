@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser, signOut } from "@/lib/auth";
+import { currentUserId, requireUser, signOut } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { checkSupportedSite, parseId, parseInterval, parseNovelUrl, parseSeriesStatus } from "@/lib/validate";
 
@@ -40,6 +40,14 @@ export async function checkAllAction() {
   await requireUser();
   getDb().requestCheckAll();
   revalidatePath("/");
+}
+
+/** Hide a novel from "Continue reading" (progress kept); it comes back once read further. */
+export async function hideFromShelfAction(novelId: number) {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const id = parseId(String(novelId));
+  if (id) getDb().hideFromShelf(uid, id);
 }
 
 export async function retryAction(form: FormData) {

@@ -39,6 +39,9 @@ it("continueReading: started novels only, most recently read first, capped", () 
   expect(continueReading(rows).map(r => r.id)).toEqual([3, 4, 1]);
   expect(continueReading(rows, 2).map(r => r.id)).toEqual([3, 4]);
   expect(continueReading([n(5, null, null)])).toEqual([]);
+  const hidden = { ...n(6, 60, "2026-04-01"), shelf_hidden_read_at: "2026-04-01" };
+  expect(continueReading([hidden])).toEqual([]); // hidden at its current read_at
+  expect(continueReading([{ ...hidden, read_at: "2026-04-02" }]).map(r => r.id)).toEqual([6]); // read further: back
 });
 
 it("coverHue: stable per title, within 0–359", () => {

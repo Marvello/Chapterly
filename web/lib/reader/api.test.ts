@@ -104,12 +104,14 @@ describe("libraryRows", () => {
   it("adds reading progress to each library row; unread only once the novel is started", () => {
     const list = [{ id: 1, title: "A" }, { id: 2, title: "B" }] as LibraryRow[];
     const reading = [
-      { id: 1, unread: 4, progress_chapter_id: 9, progress_idx: 9, progress_fraction: 0.5, read_at: "2026-10-05T00:00:00Z" },
+      { id: 1, unread: 4, progress_chapter_id: 9, progress_idx: 9, progress_fraction: 0.5, read_at: "2026-10-05T00:00:00Z",
+        shelf_hidden_read_at: "2026-10-01T00:00:00Z" },
       { id: 2, unread: 7, progress_chapter_id: null, progress_idx: null, progress_fraction: null, read_at: null },
     ] as ReaderNovel[];
     expect(libraryRows(list, reading)).toEqual([
-      { id: 1, title: "A", unread: 4, progress_chapter_id: 9, progress_idx: 9, progress_fraction: 0.5, read_at: "2026-10-05T00:00:00Z" },
-      { id: 2, title: "B", unread: null, progress_chapter_id: null, progress_idx: null, progress_fraction: null, read_at: null },
+      { id: 1, title: "A", unread: 4, progress_chapter_id: 9, progress_idx: 9, progress_fraction: 0.5, read_at: "2026-10-05T00:00:00Z",
+        shelf_hidden_read_at: "2026-10-01T00:00:00Z" },
+      { id: 2, title: "B", unread: null, progress_chapter_id: null, progress_idx: null, progress_fraction: null, read_at: null, shelf_hidden_read_at: null },
     ]);
   });
 });

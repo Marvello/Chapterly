@@ -174,6 +174,7 @@ function openDb(file = process.env.CHAPTERLY_DB || path.join(__dirname, "..", "d
         readerLibrary: (userId, novelId = null) => all(`
             SELECT n.id, n.title, n.author, n.cover_url, n.toc_url,
                    p.chapter_id AS progress_chapter_id, pc.idx AS progress_idx, p.fraction AS progress_fraction, p.read_at,
+                   p.shelf_hidden_read_at,
                    COUNT(c.html) AS chapters_fetched,
                    COALESCE(SUM(CASE WHEN c.html IS NOT NULL AND (p.chapter_id IS NULL OR c.idx > pc.idx
                                      OR (c.idx = pc.idx AND c.id > pc.id)) THEN 1 ELSE 0 END), 0) AS unread
@@ -230,6 +231,9 @@ function openDb(file = process.env.CHAPTERLY_DB || path.join(__dirname, "..", "d
                 return { saved, position };
             });
         },
+        /** Hide a novel from "Continue reading" until its read_at changes (i.e. until it's read further). */
+        hideFromShelf: (userId, novelId) =>
+            run("UPDATE reading_progress SET shelf_hidden_read_at = read_at WHERE user_id = ? AND novel_id = ?", userId, novelId),
         setEpubEnabled: (id, on) => run("UPDATE novels SET epub_enabled = ? WHERE id = ?", on ? 1 : 0, id),
         /** True when chapters were fetched after the EPUB was last built (or it was never built). */
         epubStale(novelId) {

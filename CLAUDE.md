@@ -62,7 +62,8 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   are re-cleaned on the next reader read / EPUB build, and phones drop cached chapters (IndexedDB version).
 - Look: warm paper/charcoal tokens + amber accent in `globals.css` (all text pairs ≥4.5:1 — re-check if you change
   them), Literata as `font-serif` (`layout.tsx` → `--font-literata`). Reader settings add font, width and a
-  "system" theme that is pure CSS (uses the page tokens). Library: `ContinueShelf`, `Cover` (hashed-hue placeholder),
+  "system" theme that is pure CSS (uses the page tokens). Library: `ContinueShelf` (✕ = `hideFromShelfAction`: stores the current `read_at` in
+  `reading_progress.shelf_hidden_read_at`, migration 010; hidden while `read_at` equals it, so reading further brings it back; progress kept), `Cover` (hashed-hue placeholder),
   posters default on phones (`viewPref.ts`), add form behind "+", "Check all" (`checkAllAction` → `requestCheckAll`: active novels, minus completed + fully fetched like `isDue`). Novel view opens scrolled to the current chapter, so its
   "Library" back bar is sticky; its header links to the online-only manage page `/novels/[id]`; both list chapters by (`idx, id`), newest first by
   default (`OrderToggle`; per-device cookie `chapterly-chapter-order` so the server-rendered manage page reads it too).

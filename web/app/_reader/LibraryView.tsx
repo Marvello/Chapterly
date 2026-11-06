@@ -77,7 +77,7 @@ export default function LibraryView({ rev, notice, resync }: { rev: number; noti
       {all === null ? null : all.length === 0
         ? <p className="text-tmuted">{isOnline ? "No novels yet. Paste a novel's table-of-contents URL above." : "Nothing saved on this device yet. Connect once to load your library."}</p>
         : <>
-          {!query.q && query.filter === "all" && <ContinueShelf novels={all} />}
+          {!query.q && query.filter === "all" && <ContinueShelf novels={all} online={isOnline} resync={resync} />}
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {/* basis: on a phone the layout toggle wraps below instead of squeezing the controls */}
             <div className="min-w-0 grow basis-72"><LibraryControls query={query} /></div>
