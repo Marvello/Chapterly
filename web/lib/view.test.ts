@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LibraryRow } from "./db";
-import { chapterOrder, continueReading, coverHue, displayTitle, fetchedPct, isSeriesDone, libraryView, newSince, nextCheckAt, nextCheckLabel, novelStatus, pageOf, parseLibraryQuery, queryLibrary, relativeTime, sortLibrary, workerDown } from "./view";
+import { chapterOrder, coverHue, displayTitle, fetchedPct, isSeriesDone, libraryView, newSince, nextCheckAt, nextCheckLabel, readingList, novelStatus, pageOf, parseLibraryQuery, queryLibrary, relativeTime, sortLibrary, workerDown } from "./view";
 
 const row = (o: Partial<LibraryRow>): LibraryRow => ({
   id: 1, toc_url: "https://x.com/n", parser: null, title: "T", author: null, language: null, subjects: null,
@@ -33,15 +33,16 @@ it("displayTitle: title, else the TOC URL's hostname, else the raw URL", () => {
   expect(displayTitle(row({ title: "", toc_url: "not a url" }))).toBe("not a url");
 });
 
-it("continueReading: started novels only, most recently read first, capped", () => {
-  const n = (id: number, progress_chapter_id: number | null, read_at: string | null) => ({ id, progress_chapter_id, read_at });
-  const rows = [n(1, 10, "2026-01-01"), n(2, null, null), n(3, 30, "2026-03-01"), n(4, 40, "2026-02-01")];
-  expect(continueReading(rows).map(r => r.id)).toEqual([3, 4, 1]);
-  expect(continueReading(rows, 2).map(r => r.id)).toEqual([3, 4]);
-  expect(continueReading([n(5, null, null)])).toEqual([]);
+it("readingList: started novels; unread first, then caught up, each most recently read first; hidden ones out", () => {
+  const n = (id: number, progress_chapter_id: number | null, read_at: string | null, unread: number | null = 1) =>
+    ({ id, progress_chapter_id, read_at, unread });
+  const rows = [n(1, 10, "2026-01-01"), n(2, null, null, null), n(3, 30, "2026-03-01", 0), n(4, 40, "2026-02-01"), n(7, 70, "2026-01-15", 0)];
+  const ids = (l: { unread: { id: number }[]; caughtUp: { id: number }[] }) => [l.unread.map(r => r.id), l.caughtUp.map(r => r.id)];
+  expect(ids(readingList(rows))).toEqual([[4, 1], [3, 7]]);   // 3 was read last, but has nothing new
+  expect(ids(readingList([n(5, null, null, null)]))).toEqual([[], []]);
   const hidden = { ...n(6, 60, "2026-04-01"), shelf_hidden_read_at: "2026-04-01" };
-  expect(continueReading([hidden])).toEqual([]); // hidden at its current read_at
-  expect(continueReading([{ ...hidden, read_at: "2026-04-02" }]).map(r => r.id)).toEqual([6]); // read further: back
+  expect(ids(readingList([hidden]))).toEqual([[], []]); // hidden at its current read_at
+  expect(ids(readingList([{ ...hidden, read_at: "2026-04-02" }]))).toEqual([[6], []]); // read further: back
 });
 
 it("coverHue: stable per title, within 0–359", () => {

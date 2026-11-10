@@ -7,7 +7,7 @@ import { expect, it } from "vitest";
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 it("every reader API route file is present in the checkout", () => {
-  for (const r of ["library", "novels/[id]/toc", "novels/[id]/chapters", "progress"]) {
+  for (const r of ["library", "account", "novels/[id]/toc", "novels/[id]/chapters", "progress"]) {
     expect(existsSync(here(`./${r}/route.ts`)), r).toBe(true);
   }
 });

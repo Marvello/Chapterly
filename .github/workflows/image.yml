@@ -68,6 +68,7 @@ jobs:
           context: .
           file: ${{ matrix.app }}/Dockerfile
           platforms: linux/${{ matrix.platform.arch }}
+          build-args: GIT_SHA=${{ github.sha }}   # web shows it on the Account tab; worker ignores it
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ matrix.app }}-${{ matrix.platform.arch }}

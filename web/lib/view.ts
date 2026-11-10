@@ -32,12 +32,17 @@ export function displayTitle(n: Pick<NovelRow, "title" | "toc_url">): string {
   try { return new URL(n.toc_url).hostname || n.toc_url; } catch { return n.toc_url; }
 }
 
-/** "Continue reading" shelf: started novels, most recently read first. */
-export const continueReading = <T extends Pick<ReaderNovel, "progress_chapter_id" | "read_at" | "shelf_hidden_read_at">>(rows: T[], max = 6): T[] =>
-  // Hidden by the user until it's read further (read_at moves past the value it was hidden at).
-  rows.filter(n => n.progress_chapter_id != null && n.shelf_hidden_read_at !== n.read_at)
-    .sort((a, b) => (b.read_at ?? "").localeCompare(a.read_at ?? ""))
-    .slice(0, max);
+/**
+ * Reading home: started novels the user hasn't hidden (hidden until read further: read_at moves past the value
+ * it was hidden at). Those with unread chapters first, then the caught-up ones; each most recently read first.
+ * ponytail: "unread" counts whole chapters after the current one, so a novel you're halfway through the last
+ * chapter of sits under caught up; needs a reliable "finished this chapter" signal to do better.
+ */
+export function readingList<T extends Pick<ReaderNovel, "progress_chapter_id" | "read_at" | "shelf_hidden_read_at" | "unread">>(rows: T[]) {
+  const started = rows.filter(n => n.progress_chapter_id != null && n.shelf_hidden_read_at !== n.read_at)
+    .sort((a, b) => (b.read_at ?? "").localeCompare(a.read_at ?? ""));
+  return { unread: started.filter(n => !!n.unread), caughtUp: started.filter(n => !n.unread) };
+}
 
 /** Stable hue (0–359) for a title's placeholder cover. */
 export function coverHue(title: string): number {

@@ -6,12 +6,16 @@ import { runSync } from "@/lib/reader/client";
 import { IdbBlockedError } from "@/lib/reader/idb";
 import { online, unreachable } from "@/lib/reader/online";
 import { AuthError } from "@/lib/reader/sync";
+import { lastTab, parseTab } from "@/lib/reader/tabs";
 import { parseId } from "@/lib/validate";
+import AccountView from "./AccountView";
 import LibraryView from "./LibraryView";
 import NovelView from "./NovelView";
+import ReadingHome from "./ReadingHome";
 import ReadingView from "./ReadingView";
 
-// Library + reader in one page: views switch by query string (?novel=, &chapter=) via pushState, so the
+// Reading home, library, account + reader in one page: views switch by query string (?tab=, ?novel=, &chapter=)
+// via pushState, so the
 // service worker can serve the whole thing offline as one cached page.
 export default function ReaderApp() {
   const params = useSearchParams();
@@ -20,6 +24,8 @@ export default function ReaderApp() {
   useEffect(() => { routerRef.current = router; });
   const novelId = parseId(params.get("novel") ?? "");
   const chapterId = parseId(params.get("chapter") ?? "");
+  const tab = parseTab(params.get("tab"));
+  useEffect(() => { if (!novelId) lastTab.set(tab); }, [tab, novelId]);   // a novel's "back" returns here
   const [rev, setRev] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -56,5 +62,7 @@ export default function ReaderApp() {
 
   if (novelId && chapterId) return <ReadingView key={novelId} novelId={novelId} chapterId={chapterId} />;
   if (novelId) return <NovelView novelId={novelId} rev={rev} />;
-  return <LibraryView rev={rev} notice={notice} resync={sync} />;
+  if (tab === "account") return <AccountView />;
+  if (tab === "library") return <LibraryView rev={rev} notice={notice} resync={sync} />;
+  return <ReadingHome rev={rev} notice={notice} resync={sync} />;
 }

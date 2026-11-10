@@ -21,6 +21,9 @@ COPY --from=builder /build/web/public ./public
 COPY shared shared
 # Named volumes copy this dir's ownership on first use, so the node user (1000) can write the DB.
 RUN mkdir -p /data && chown node:node /data
+# Shown on the Account tab; CI passes the commit (image.yml), local builds say "dev". Last, so it busts no cache.
+ARG GIT_SHA=dev
+ENV CHAPTERLY_VERSION=$GIT_SHA
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]

@@ -239,7 +239,7 @@ function openDb(file = process.env.CHAPTERLY_DB || path.join(__dirname, "..", "d
                 return { saved, position };
             });
         },
-        /** Hide a novel from "Continue reading" until its read_at changes (i.e. until it's read further). */
+        /** Hide a novel from the Reading tab until its read_at changes (i.e. until it's read further). */
         hideFromShelf: (userId, novelId) =>
             run("UPDATE reading_progress SET shelf_hidden_read_at = read_at WHERE user_id = ? AND novel_id = ?", userId, novelId),
         setEpubEnabled: (id, on) => run("UPDATE novels SET epub_enabled = ? WHERE id = ?", on ? 1 : 0, id),

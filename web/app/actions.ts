@@ -42,7 +42,7 @@ export async function checkAllAction() {
   revalidatePath("/");
 }
 
-/** Hide a novel from "Continue reading" (progress kept); it comes back once read further. */
+/** Hide a novel from the Reading tab (progress kept); it comes back once read further. */
 export async function hideFromShelfAction(novelId: number) {
   const uid = await currentUserId();
   if (!uid) throw new Error("Not signed in");
@@ -78,7 +78,7 @@ export async function setSeriesStatusAction(form: FormData) {
 export async function deleteAction(form: FormData) {
   let deleted = false;
   await withNovel(form, id => { getDb().deleteNovel(id); deleted = true; });
-  if (deleted) redirect("/");
+  if (deleted) redirect("/?tab=library");
 }
 
 export async function signOutAction() {

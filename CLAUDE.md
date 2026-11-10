@@ -39,10 +39,11 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   limits + `--max-old-space-size` below the worker's limit, web sets `TRUST_CF_HEADER=1` (Cloudflare tunnel).
 
 ## Library + reader (web/app/_reader, web/lib/reader)
-- `/` is one client-rendered page (library, novel, reading views; `/read` redirects there); views switch by
+- `/` is one client-rendered page (`/read` redirects there): three tabs (`lib/reader/tabs.ts`; Reading = `/`, the home;
+  `?tab=library`; `?tab=account`) plus the novel and reading views (`?novel=`, `&chapter=`). Views switch by
   query string via `history.pushState` so the service worker (`public/sw.js`) can cache it as one shell.
   The library renders from the phone's cached `/api/reader/library` (full rows + progress) and hides
-  server-only parts (add, sign-out, check status, Manage link) while `lib/reader/online.ts` says the server
+  server-only parts (add, check status, Manage link) while `lib/reader/online.ts` says the server
   is unreachable (no network, or the last sync failed with a network error/timeout or a gateway
   502/503/504/530, `online.ts unreachable`). The SW likewise serves the cached shell for any non-ok, non-redirect
   answer to `/` (a Cloudflare 5xx while the home server is down). Layout choice is
@@ -62,11 +63,19 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   are re-cleaned on the next reader read / EPUB build, and phones drop cached chapters (IndexedDB version).
 - Look: warm paper/charcoal tokens + amber accent in `globals.css` (all text pairs ≥4.5:1 — re-check if you change
   them), Literata as `font-serif` (`layout.tsx` → `--font-literata`). Reader settings add font, width and a
-  "system" theme that is pure CSS (uses the page tokens). Library: `ContinueShelf` (✕ = `hideFromShelfAction`: stores the current `read_at` in
-  `reading_progress.shelf_hidden_read_at`, migration 010; hidden while `read_at` equals it, so reading further brings it back; progress kept), `Cover` (hashed-hue placeholder),
+  "system" theme that is pure CSS (uses the page tokens). Tabs: `components/TabBar.tsx` is one nav, a fixed bottom bar on phones and header links from `sm` (pages showing it
+  need `pb-24 sm:pb-4`); hidden in the novel/reading views; a novel's back bar returns to the tab it was opened from (`lastTab`).
+  Reading home (`ReadingHome.tsx`, order = `view.ts readingList`: started novels, unread first, then caught up, each newest-read first;
+  top one is the hero card; ✕ = `hideFromShelfAction`: stores the current `read_at` in
+  `reading_progress.shelf_hidden_read_at`, migration 010; hidden while `read_at` equals it, so reading further brings it back; progress kept).
+  Account tab (`AccountView.tsx` ← `GET /api/reader/account`, cached in localStorage by `lib/reader/account.ts`, cleared on sign-out):
+  name, email, sign-in methods, version (`CHAPTERLY_VERSION` = `GIT_SHA` build arg, set by CI), worker heartbeat, sign out.
+  Library: `Cover` (hashed-hue placeholder),
   posters default on phones (`viewPref.ts`), add form behind "+", "Check all" (`checkAllAction` → `requestCheckAll`: active novels, minus completed + fully fetched like `isDue`). Novel view opens scrolled to the current chapter, so its
   "Library" back bar is sticky; its header links to the online-only manage page `/novels/[id]`; both list chapters by (`idx, id`), newest first by
   default (`OrderToggle`; per-device cookie `chapterly-chapter-order` so the server-rendered manage page reads it too).
 - Per-novel `novels.epub_enabled` gates the EPUB build and the Audiobookshelf rescan.
 - Browser-automation testing: the automation tab is hidden, so IntersectionObserver/timers only run while it
   renders — drive it with real scroll input + screenshots.
+  Phone width: the extension can't resize the window and the app refuses framing, so use headless Chrome over CDP
+  (`Emulation.setDeviceMetricsOverride`), signing in via `POST /api/auth/callback/credentials` with the csrf token.

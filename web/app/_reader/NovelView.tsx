@@ -13,6 +13,7 @@ import { chapterLabel } from "@/lib/reader/label";
 import { online } from "@/lib/reader/online";
 import { orderPref } from "@/lib/reader/orderPref";
 import { chapterState, savedFromLibrary, savedProgress } from "@/lib/reader/progress";
+import { TABS, lastTab, tabHref } from "@/lib/reader/tabs";
 import type { Position } from "@/lib/reader/types";
 import { displayTitle } from "@/lib/view";
 
@@ -61,8 +62,8 @@ export default function NovelView({ novelId, rev }: { novelId: number; rev: numb
     <main className="mx-auto max-w-2xl p-4">
       {/* Sticky: the page opens scrolled to the current chapter, far below the top. */}
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-3 border-b border-edge bg-page px-4 py-3">
-        <button onClick={() => go("/")} className="flex items-center gap-1 text-sm text-tmuted hover:text-tprimary">
-          <ArrowLeft className="size-4" /> Library
+        <button onClick={() => go(tabHref(lastTab.get()))} className="flex items-center gap-1 text-sm text-tmuted hover:text-tprimary">
+          <ArrowLeft className="size-4" /> {TABS[lastTab.get()]}
         </button>
       </div>
       <header className="mb-4 flex gap-4">

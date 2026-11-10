@@ -24,10 +24,9 @@ export default function LibraryControls({ query }: { query: LibraryQuery }) {
 
   const go = (patch: Partial<LibraryQuery>, history: "push" | "replace" = "push") => {
     const next = { ...query, ...patch };
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ tab: "library" });   // the controls only show on the Library tab
     for (const k of ["sort", "filter", "q"] as const) if (next[k] && next[k] !== DEFAULTS[k]) params.set(k, next[k]);
-    const qs = params.toString();
-    window.history[history === "push" ? "pushState" : "replaceState"](null, "", qs ? `${pathname}?${qs}` : pathname);
+    window.history[history === "push" ? "pushState" : "replaceState"](null, "", `${pathname}?${params}`);
   };
   const search = (q: string) => {
     setText(q);
