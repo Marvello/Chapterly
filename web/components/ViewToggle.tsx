@@ -13,7 +13,7 @@ export default function ViewToggle() {
     <div role="group" aria-label="Library layout" className="inline-flex overflow-hidden rounded-lg border border-edge text-sm">
       {LIBRARY_VIEWS.map(v => (
         <button key={v} type="button" onClick={() => viewPref.set(v)} aria-pressed={v === view}
-          className={`px-3 py-1 ${v === view ? "bg-accent text-page" : "text-tmuted hover:text-tprimary"}`}>
+          className={`px-3 py-1 focus-visible:-outline-offset-2 focus-visible:outline-tprimary ${v === view ? "bg-accent text-page" : "text-tmuted hover:text-tprimary"}`}>
           {LABEL[v]}
         </button>
       ))}

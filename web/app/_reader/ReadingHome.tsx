@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import ReaderLink from "@/components/ReaderLink";
 import type { LibraryNovel } from "@/lib/db";
 import { online } from "@/lib/reader/online";
-import { tabHref } from "@/lib/reader/tabs";
+import { TAB_PAGE, tabHref } from "@/lib/reader/tabs";
 import { displayTitle, readingList, relativeTime } from "@/lib/view";
 import { useLibrary } from "./useLibrary";
 
@@ -66,7 +66,7 @@ export default function ReadingHome({ rev, notice, resync }: { rev: number; noti
   );
 
   return (
-    <main className="mx-auto max-w-2xl p-4 pb-24 sm:pb-4">
+    <main className={TAB_PAGE}>
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 border-b border-edge bg-page px-4 pt-4">
         <Header tab="reading" />
         {!isOnline && <p className="mb-4 text-sm text-tmuted">Offline: showing the novels saved on this device.</p>}

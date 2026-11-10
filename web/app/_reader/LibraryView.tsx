@@ -12,6 +12,7 @@ import NovelRow from "@/components/NovelRow";
 import NovelTable from "@/components/NovelTable";
 import ViewToggle from "@/components/ViewToggle";
 import { online } from "@/lib/reader/online";
+import { TAB_PAGE } from "@/lib/reader/tabs";
 import { viewPref } from "@/lib/reader/viewPref";
 import { novelStatus, parseLibraryQuery, queryLibrary } from "@/lib/view";
 import { useLibrary } from "./useLibrary";
@@ -42,7 +43,7 @@ export default function LibraryView({ rev, notice, resync }: { rev: number; noti
   const novels = all ? queryLibrary(all, query) : [];
 
   return (
-    <main className="mx-auto max-w-6xl p-4 pb-24 sm:pb-4">
+    <main className={TAB_PAGE}>
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 border-b border-edge bg-page px-4 pt-4">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1"><Header tab="library" /></div>
@@ -68,11 +69,7 @@ export default function LibraryView({ rev, notice, resync }: { rev: number; noti
       {all === null ? null : all.length === 0
         ? <p className="text-tmuted">{isOnline ? "No novels yet. Paste a novel's table-of-contents URL above." : "Nothing saved on this device yet. Connect once to load your library."}</p>
         : <>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            {/* basis: on a phone the layout toggle wraps below instead of squeezing the controls */}
-            <div className="min-w-0 grow basis-72"><LibraryControls query={query} /></div>
-            <ViewToggle />
-          </div>
+          <div className="mb-3"><LibraryControls query={query}><ViewToggle /></LibraryControls></div>
           <p className="mb-3 text-sm text-tmuted">
             {novels.length === all.length ? `${all.length} novel${all.length === 1 ? "" : "s"}` : `${novels.length} of ${all.length} novels`}
           </p>

@@ -64,7 +64,7 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
 - Look: warm paper/charcoal tokens + amber accent in `globals.css` (all text pairs ≥4.5:1 — re-check if you change
   them), Literata as `font-serif` (`layout.tsx` → `--font-literata`). Reader settings add font, width and a
   "system" theme that is pure CSS (uses the page tokens). Tabs: `components/TabBar.tsx` is one nav, a fixed bottom bar on phones and header links from `sm` (pages showing it
-  need `pb-24 sm:pb-4`); hidden in the novel/reading views; a novel's back bar returns to the tab it was opened from (`lastTab`).
+  need bottom padding; the three tab pages share one container class, `tabs.ts TAB_PAGE`, so width + padding match and the header doesn't jump); hidden in the novel/reading views; a novel's back bar returns to the tab it was opened from (`lastTab`).
   Reading home (`ReadingHome.tsx`, order = `view.ts readingList`: started novels, unread first, then caught up, each newest-read first;
   top one is the hero card; ✕ = `hideFromShelfAction`: stores the current `read_at` in
   `reading_progress.shelf_hidden_read_at`, migration 010; hidden while `read_at` equals it, so reading further brings it back; progress kept).

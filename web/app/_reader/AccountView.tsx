@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import SignOutButton from "@/components/SignOutButton";
 import { loadAccount, type Account } from "@/lib/reader/account";
 import { online } from "@/lib/reader/online";
+import { TAB_PAGE } from "@/lib/reader/tabs";
 import { relativeTime, workerDown } from "@/lib/view";
 
 /** Who's signed in, the app version and the worker's heartbeat. Offline it shows what this device last saw
@@ -30,7 +31,7 @@ export default function AccountView() {
   ] : [];
 
   return (
-    <main className="mx-auto max-w-2xl p-4 pb-24 sm:pb-4">
+    <main className={TAB_PAGE}>
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 border-b border-edge bg-page px-4 pt-4">
         <Header tab="account" />
         {!isOnline && <p className="mb-4 text-sm text-tmuted">Offline: showing what this device last saw.</p>}
