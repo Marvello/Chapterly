@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LibraryRow } from "./db";
-import { chapterOrder, coverHue, displayTitle, fetchedPct, isSeriesDone, libraryView, newSince, nextCheckAt, nextCheckLabel, readingList, novelStatus, pageOf, parseLibraryQuery, queryLibrary, relativeTime, sortLibrary, workerDown } from "./view";
+import { chapterOrder, coverHue, displayTitle, fetchBacklog, fetchedPct, hasMoreToRead, pct, readProgress, isSeriesDone, libraryView, newSince, nextCheckAt, nextCheckLabel, readingList, novelStatus, pageOf, parseLibraryQuery, queryLibrary, relativeTime, sortLibrary, workerDown } from "./view";
 
 const row = (o: Partial<LibraryRow>): LibraryRow => ({
   id: 1, toc_url: "https://x.com/n", parser: null, title: "T", author: null, language: null, subjects: null,
@@ -35,7 +35,7 @@ it("displayTitle: title, else the TOC URL's hostname, else the raw URL", () => {
 
 it("readingList: started novels; unread first, then caught up, each most recently read first; hidden ones out", () => {
   const n = (id: number, progress_chapter_id: number | null, read_at: string | null, unread: number | null = 1) =>
-    ({ id, progress_chapter_id, read_at, unread });
+    ({ id, progress_chapter_id, read_at, unread, progress_fraction: 0.4 });
   const rows = [n(1, 10, "2026-01-01"), n(2, null, null, null), n(3, 30, "2026-03-01", 0), n(4, 40, "2026-02-01"), n(7, 70, "2026-01-15", 0)];
   const ids = (l: { unread: { id: number }[]; caughtUp: { id: number }[] }) => [l.unread.map(r => r.id), l.caughtUp.map(r => r.id)];
   expect(ids(readingList(rows))).toEqual([[4, 1], [3, 7]]);   // 3 was read last, but has nothing new
@@ -43,6 +43,26 @@ it("readingList: started novels; unread first, then caught up, each most recentl
   const hidden = { ...n(6, 60, "2026-04-01"), shelf_hidden_read_at: "2026-04-01" };
   expect(ids(readingList([hidden]))).toEqual([[], []]); // hidden at its current read_at
   expect(ids(readingList([{ ...hidden, read_at: "2026-04-02" }]))).toEqual([[6], []]); // read further: back
+});
+
+it("readingList: the newest chapter, opened but not finished, still counts as reading (new progress only)", () => {
+  const n = (id: number, read_at: string, progress_fraction: number) => ({ id, progress_chapter_id: 1, read_at, unread: 0, progress_fraction });
+  const l = readingList([n(1, "2026-12-01", 0.4), n(2, "2026-12-02", 1), n(3, "2026-10-01", 0.4)]);
+  expect(l.unread.map(r => r.id)).toEqual([1]);       // halfway through the last chapter
+  expect(l.caughtUp.map(r => r.id)).toEqual([2, 3]);  // read to the end; and saved before the reader recorded that
+  expect(hasMoreToRead({ ...n(4, "2026-12-01", 1), unread: 3 })).toBe(true);
+});
+
+it("pct, readProgress, fetchBacklog", () => {
+  expect([pct(369, 620), pct(619, 620), pct(620, 620), pct(1, 0), pct(9, 3)]).toEqual([59, 99, 100, 0, 100]);
+  // chapter 369 of 620 (251 after it), 40% into it: 368.4 / 620
+  expect(readProgress({ chapters_fetched: 620, unread: 251, progress_fraction: 0.4 })).toBeCloseTo(368.4 / 620);
+  expect(readProgress({ chapters_fetched: 10, unread: 0, progress_fraction: 1 })).toBe(1);
+  expect(readProgress({ chapters_fetched: 10, unread: null, progress_fraction: null })).toBe(0);
+  expect(readProgress({ chapters_fetched: 0, unread: 0, progress_fraction: 0 })).toBe(0);
+  const r = (chapters_total: number, chapters_fetched: number, chapters_failing: number) => ({ chapters_total, chapters_fetched, chapters_failing });
+  expect(fetchBacklog([r(100, 90, 2), r(50, 50, 0)])).toEqual({ total: 150, fetched: 140, failing: 2 });
+  expect(fetchBacklog([])).toEqual({ total: 0, fetched: 0, failing: 0 });
 });
 
 it("coverHue: stable per title, within 0–359", () => {

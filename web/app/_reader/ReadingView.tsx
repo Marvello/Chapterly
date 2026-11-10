@@ -46,7 +46,7 @@ function Choice<T extends string>({ label, options, value, onChange, style }: {
   );
 }
 
-export default function ReadingView({ novelId, chapterId }: { novelId: number; chapterId: number }) {
+export default function ReadingView({ novelId, chapterId, onLeave }: { novelId: number; chapterId: number; onLeave: () => void }) {
   const store = useMemo(() => idbStore(), []);
   const router = useRouter();
   const [startId] = useState(chapterId);   // later URL updates come from our own replaceState
@@ -192,7 +192,8 @@ export default function ReadingView({ novelId, chapterId }: { novelId: number; c
     const els = root.current?.querySelectorAll<HTMLElement>("[data-chapter]");
     if (!els?.length) return null;
     const pos = positionFromScroll([...els].map(el => ({ chapterId: Number(el.dataset.chapter), idx: Number(el.dataset.idx),
-      top: el.getBoundingClientRect().top + window.scrollY, height: el.offsetHeight })), window.scrollY);
+      top: el.getBoundingClientRect().top + window.scrollY, height: el.offsetHeight })), window.scrollY,
+      window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2);
     return pos && { novelId, ...pos };
   }, [novelId]);
 
@@ -226,8 +227,9 @@ export default function ReadingView({ novelId, chapterId }: { novelId: number; c
     return () => { clearInterval(t); document.removeEventListener("visibilitychange", onHide); };
   }, [track]);
   // Leaving (Back, system back): save the spot reached since the last 5 s tick. A layout cleanup runs
-  // while the chapters are still in the DOM.
-  useLayoutEffect(() => () => { track(); }, [track]);
+  // while the chapters are still in the DOM. Then `onLeave`: the page we return to lists progress and
+  // unread counts, so it re-reads them once this position is stored (and syncs).
+  useLayoutEffect(() => () => { track().finally(onLeave); }, [track, onLeave]);
 
   useEffect(() => {
     let last = window.scrollY;

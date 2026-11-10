@@ -9,7 +9,7 @@ import ReaderLink from "@/components/ReaderLink";
 import type { LibraryNovel } from "@/lib/db";
 import { online } from "@/lib/reader/online";
 import { TAB_PAGE, tabHref } from "@/lib/reader/tabs";
-import { displayTitle, readingList, relativeTime } from "@/lib/view";
+import { displayTitle, pct, readProgress, readingList, relativeTime } from "@/lib/view";
 import { useLibrary } from "./useLibrary";
 
 const resume = (n: LibraryNovel) => `/?novel=${n.id}&chapter=${n.progress_chapter_id}`;
@@ -85,10 +85,12 @@ export default function ReadingHome({ rev, notice, resync }: { rev: number; noti
             <Cover url={hero.cover_url} title={displayTitle(hero)} className="h-40 w-[6.67rem] shrink-0 rounded border border-edge text-xs" />
             <div className="flex min-w-0 flex-1 flex-col">
               <h2 className="line-clamp-3 pr-6 font-serif text-xl font-semibold leading-tight text-tprimary">{displayTitle(hero)}</h2>
-              <p className="mt-1 text-sm text-tmuted">Chapter {position(hero)} of {hero.chapters_fetched}</p>
-              <p className="mt-1.5"><span className={pill}>{hero.unread} unread</span></p>
+              <p className="mt-1 text-sm text-tmuted">Chapter {position(hero)} of {hero.chapters_fetched} · {pct(readProgress(hero), 1)}%</p>
+              {/* No unread chapters = the newest one is open but not read to its end (lib/view hasMoreToRead). */}
+              <p className="mt-1.5">{hero.unread ? <span className={pill}>{hero.unread} unread</span>
+                : <span className="text-sm text-tsecondary">Finishing the latest chapter</span>}</p>
               <div className="mt-3 h-1 rounded bg-edge" aria-hidden>
-                <div className="h-full rounded bg-accent" style={{ width: `${hero.chapters_fetched ? (position(hero) / hero.chapters_fetched) * 100 : 0}%` }} />
+                <div className="h-full rounded bg-accent" style={{ width: `${readProgress(hero) * 100}%` }} />
               </div>
               <span className="mt-auto self-start rounded-lg bg-accent px-4 py-2 text-sm font-medium text-page">Continue</span>
             </div>

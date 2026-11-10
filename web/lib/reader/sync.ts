@@ -1,6 +1,6 @@
 // One sync pass: send unsent progress, refresh the library, keep the planned chapters on the phone.
 import type { ReaderNovel, ReaderPosition, TocEntry } from "@/lib/db";
-import { planCache } from "./plan";
+import { offlineCount, planCache } from "./plan";
 import { savedFromLibrary } from "./progress";
 import type { OutboxEntry, StoredChapter } from "./types";
 
@@ -38,6 +38,20 @@ export interface ReaderStore {
 
 /** progressError: progress that couldn't be sent (kept for the next run), e.g. a 403 from a wrong AUTH_URL. */
 export type SyncResult = { downloaded: number; quotaExceeded: boolean; progressError: string | null };
+
+/** Chapters the sync keeps on this phone, and how many are already there (novels whose toc isn't here yet don't count). */
+export async function offlineStatus(store: ReaderStore): Promise<{ wanted: number; have: number }> {
+  const pins = await store.pins();
+  const sum = { wanted: 0, have: 0 };
+  for (const n of (await store.getLibrary()) ?? []) {
+    const toc = await store.getToc(n.id);
+    if (!toc) continue;
+    const c = offlineCount(toc, await store.cachedChapterIds(n.id), savedFromLibrary(n), pins.has(n.id));
+    sum.wanted += c.wanted;
+    sum.have += c.have;
+  }
+  return sum;
+}
 
 export async function syncOnce(store: ReaderStore, api: ReaderApi, opts: { flushOnly?: boolean } = {}): Promise<SyncResult> {
   let progressError: string | null = null;

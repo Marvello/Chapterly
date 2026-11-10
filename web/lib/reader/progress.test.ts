@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReaderNovel } from "@/lib/db";
-import { chapterState, compare, decide, mergeOutbox, savedFromLibrary, savedProgress, sortReaderLibrary } from "./progress";
+import { chapterState, compare, decide, mergeOutbox, savedFromLibrary, savedProgress, sortReaderLibrary, withPending } from "./progress";
 import type { OutboxEntry, Position } from "./types";
 
 const P = (chapterId: number, idx: number, fraction = 0): Position => ({ novelId: 1, chapterId, idx, fraction });
@@ -13,6 +13,19 @@ describe("compare", () => {
     expect(compare(P(2, 2, 0.4), P(2, 2, 0.6))).toBeLessThan(0);
     expect(compare(P(2, 2, 0.5), P(2, 2, 0.5))).toBe(0);
   });
+});
+
+it("withPending: unsent progress shows in the library row, unread recounted from the toc", () => {
+  const toc = [1, 2, 3, 4, 5].map(id => ({ id, idx: id, title: null }));
+  const n = { id: 1, title: "T", author: null, cover_url: null, toc_url: "u", chapters_fetched: 5, unread: 3,
+    progress_chapter_id: 2, progress_idx: 2, progress_fraction: 0.5, read_at: "2026-10-01T00:00:00.000Z" } satisfies ReaderNovel;
+  expect(withPending(n, null, toc)).toBe(n);
+  expect(withPending(n, E(P(1, 1)), toc)).toBe(n);                       // behind the server's: ignored
+  expect(withPending(n, E(P(4, 4, 0.2)), toc)).toMatchObject({ progress_chapter_id: 4, progress_idx: 4, progress_fraction: 0.2, unread: 1, read_at: "2026-10-05T00:00:00.000Z" });
+  expect(withPending(n, E(P(5, 5, 1)), toc)).toMatchObject({ unread: 0, progress_fraction: 1 });
+  expect(withPending(n, E(P(1, 1), true), toc)).toMatchObject({ progress_chapter_id: 1, unread: 4 });   // confirmed move back
+  expect(withPending(n, E(P(4, 4)), undefined)).toMatchObject({ progress_chapter_id: 4, unread: 3 });  // no toc here: count kept
+  expect(withPending({ ...n, progress_chapter_id: null, progress_idx: null, unread: null }, E(P(1, 1)), toc)).toMatchObject({ progress_chapter_id: 1, unread: 4 });
 });
 
 describe("savedProgress", () => {

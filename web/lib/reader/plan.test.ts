@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { planCache } from "./plan";
+import { offlineCount, planCache } from "./plan";
 import type { Position } from "./types";
 
 const toc = Array.from({ length: 300 }, (_, i) => ({ id: i + 1, idx: i + 1, title: null }));
 const at = (chapterId: number): Position => ({ novelId: 1, chapterId, idx: chapterId, fraction: 0 });
 const range = (a: number, b: number) => new Set(Array.from({ length: b - a + 1 }, (_, i) => a + i));
+
+it("offlineCount: how much of what planCache wants is on the phone", () => {
+  expect(offlineCount(toc, range(1, 5), null, false)).toEqual({ wanted: 0, have: 0 });        // not started, not pinned
+  expect(offlineCount(toc, range(90, 119), at(100), false)).toEqual({ wanted: 51, have: 20 }); // 100..150 wanted, 100..119 there
+  expect(offlineCount(toc, range(1, 300), at(290), false)).toEqual({ wanted: 11, have: 11 });  // near the end
+  expect(offlineCount(toc, range(1, 30), null, true)).toEqual({ wanted: 300, have: 30 });      // pinned: everything
+  // agrees with planCache: what's missing is what it would fetch
+  const plan = planCache(toc, range(110, 119), at(100), false), c = offlineCount(toc, range(110, 119), at(100), false);
+  expect(c.wanted - c.have).toBe(plan.fetch.reduce((t, f) => t + f.count, 0));
+});
 
 describe("planCache", () => {
   it("does nothing for a novel that is neither started nor pinned", () => {

@@ -20,6 +20,16 @@ export function savedProgress(stored: Position | null, pending: OutboxEntry | nu
   return compare(p, stored) >= 0 ? p : stored;
 }
 
+/** A library row as this device knows it: unsent progress applied (savedProgress's rule) and, when the novel's toc is
+ * on the phone, unread recounted from it. So the lists are right before the next sync, and offline. */
+export function withPending<T extends ReaderNovel>(n: T, pending: OutboxEntry | null, toc: TocEntry[] | undefined): T {
+  const stored = savedFromLibrary(n), p = savedProgress(stored, pending);
+  if (!pending || !p || p === stored) return n;
+  const at = toc?.findIndex(c => c.id === p.chapterId) ?? -1;
+  return { ...n, progress_chapter_id: p.chapterId, progress_idx: p.idx, progress_fraction: p.fraction, read_at: pending.readAt,
+    unread: at >= 0 ? toc!.length - 1 - at : n.unread };
+}
+
 export const mergeOutbox = (prev: OutboxEntry | undefined, next: OutboxEntry): OutboxEntry =>
   ({ ...next, force: next.force || !!prev?.force });
 

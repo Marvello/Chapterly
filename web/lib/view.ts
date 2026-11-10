@@ -32,17 +32,40 @@ export function displayTitle(n: Pick<NovelRow, "title" | "toc_url">): string {
   try { return new URL(n.toc_url).hostname || n.toc_url; } catch { return n.toc_url; }
 }
 
+/** The reader records "reached the end of the chapter" (fraction 1, lib/reader/scroll.ts) only since this build.
+ * Progress saved before it can't tell, and keeps counting as finished, as it always did. */
+export const FINISH_SIGNAL_SINCE = "2026-11-10T01:18:00.000Z";
+
+type Reading = Pick<ReaderNovel, "progress_chapter_id" | "progress_fraction" | "read_at" | "shelf_hidden_read_at" | "unread">;
+
+/** Still something to read: unread chapters, or the newest chapter opened but not read to its end. */
+export const hasMoreToRead = (n: Reading) =>
+  !!n.unread || (n.unread === 0 && (n.progress_fraction ?? 0) < 1 && (n.read_at ?? "") >= FINISH_SIGNAL_SINCE);
+
 /**
  * Reading home: started novels the user hasn't hidden (hidden until read further: read_at moves past the value
- * it was hidden at). Those with unread chapters first, then the caught-up ones; each most recently read first.
- * ponytail: "unread" counts whole chapters after the current one, so a novel you're halfway through the last
- * chapter of sits under caught up; needs a reliable "finished this chapter" signal to do better.
+ * it was hidden at). Those with something left to read first, then the caught-up ones; each most recently read first.
  */
-export function readingList<T extends Pick<ReaderNovel, "progress_chapter_id" | "read_at" | "shelf_hidden_read_at" | "unread">>(rows: T[]) {
+export function readingList<T extends Reading>(rows: T[]) {
   const started = rows.filter(n => n.progress_chapter_id != null && n.shelf_hidden_read_at !== n.read_at)
     .sort((a, b) => (b.read_at ?? "").localeCompare(a.read_at ?? ""));
-  return { unread: started.filter(n => !!n.unread), caughtUp: started.filter(n => !n.unread) };
+  return { unread: started.filter(hasMoreToRead), caughtUp: started.filter(n => !hasMoreToRead(n)) };
 }
+
+/** Whole percent, rounded down so 100 means done. */
+export const pct = (part: number, whole: number) => (whole > 0 ? Math.min(100, Math.max(0, Math.floor((part / whole) * 100))) : 0);
+
+/** How far through the fetched chapters the reader is, 0..1: the chapters before the current one plus the share of it read. */
+export function readProgress(n: Pick<ReaderNovel, "chapters_fetched" | "unread" | "progress_fraction">): number {
+  if (!n.chapters_fetched || n.unread == null) return 0;
+  const before = n.chapters_fetched - n.unread - 1;   // chapters before the current one
+  return Math.min(1, Math.max(0, (before + (n.progress_fraction ?? 0)) / n.chapters_fetched));
+}
+
+/** What the worker has fetched of everything the sites list, over the whole library. */
+export const fetchBacklog = (rows: Pick<LibraryRow, "chapters_total" | "chapters_fetched" | "chapters_failing">[]) =>
+  rows.reduce((t, n) => ({ total: t.total + n.chapters_total, fetched: t.fetched + n.chapters_fetched, failing: t.failing + n.chapters_failing }),
+    { total: 0, fetched: 0, failing: 0 });
 
 /** Stable hue (0–359) for a title's placeholder cover. */
 export function coverHue(title: string): number {

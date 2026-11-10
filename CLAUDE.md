@@ -65,11 +65,17 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   them), Literata as `font-serif` (`layout.tsx` → `--font-literata`). Reader settings add font, width and a
   "system" theme that is pure CSS (uses the page tokens). Tabs: `components/TabBar.tsx` is one nav, a fixed bottom bar on phones and header links from `sm` (pages showing it
   need bottom padding; the three tab pages share one container class, `tabs.ts TAB_PAGE`, so width + padding match and the header doesn't jump); hidden in the novel/reading views; a novel's back bar returns to the tab it was opened from (`lastTab`).
-  Reading home (`ReadingHome.tsx`, order = `view.ts readingList`: started novels, unread first, then caught up, each newest-read first;
-  top one is the hero card; ✕ = `hideFromShelfAction`: stores the current `read_at` in
+  Reading home (`ReadingHome.tsx`, order = `view.ts readingList`: started novels, those with more to read first, then caught up, each newest-read first;
+  "more to read" = `hasMoreToRead`: unread chapters, or the newest chapter open but not read to its end. The end is recorded as
+  fraction 1 when the reader is scrolled to the page bottom (`scroll.ts positionFromScroll atEnd`); progress saved before
+  `FINISH_SIGNAL_SINCE` has no such signal and counts as finished. The lists come from `useLibrary`: the cached library with this device's unsent progress applied
+  (`progress.ts withPending`, unread recounted from the cached toc), so they're right offline and before a sync lands; leaving the
+  reader re-reads them and syncs (`ReadingView onLeave` → `ReaderApp left`). Top one is the hero card, with `readProgress` as bar + percent; ✕ = `hideFromShelfAction`: stores the current `read_at` in
   `reading_progress.shelf_hidden_read_at`, migration 010; hidden while `read_at` equals it, so reading further brings it back; progress kept).
   Account tab (`AccountView.tsx` ← `GET /api/reader/account`, cached in localStorage by `lib/reader/account.ts`, cleared on sign-out):
-  name, email, sign-in methods, version (`CHAPTERLY_VERSION` = `GIT_SHA` build arg, set by CI), worker heartbeat, sign out.
+  name, email, sign-in methods, version (`CHAPTERLY_VERSION` = `GIT_SHA` build arg, set by CI), worker heartbeat, sign out; plus two
+  completeness rows from the phone's own data: "On server" (`view.ts fetchBacklog` over the cached library) and "On this phone"
+  (`sync.ts offlineStatus` = `plan.ts offlineCount` per novel, same range `planCache` downloads; + `navigator.storage.estimate`).
   Library: `Cover` (hashed-hue placeholder),
   posters default on phones (`viewPref.ts`), add form behind "+", "Check all" (`checkAllAction` → `requestCheckAll`: active novels, minus completed + fully fetched like `isDue`). Novel view opens scrolled to the current chapter, so its
   "Library" back bar is sticky; its header links to the online-only manage page `/novels/[id]`; both list chapters by (`idx, id`), newest first by

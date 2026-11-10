@@ -48,6 +48,10 @@ export default function ReaderApp() {
       });
   }, []);
 
+  // Leaving the reader: its last position is saved by now, so re-read the lists (works offline: unsent progress
+  // is applied on the phone), and sync for what only the server knows.
+  const left = useCallback(() => { setRev(v => v + 1); sync(); }, [sync]);
+
   useEffect(() => {
     navigator.serviceWorker?.register("/sw.js").catch(() => {});
     const onVisible = () => { if (document.visibilityState === "visible") sync(); };
@@ -60,9 +64,9 @@ export default function ReaderApp() {
     };
   }, [sync]);
 
-  if (novelId && chapterId) return <ReadingView key={novelId} novelId={novelId} chapterId={chapterId} />;
+  if (novelId && chapterId) return <ReadingView key={novelId} novelId={novelId} chapterId={chapterId} onLeave={left} />;
   if (novelId) return <NovelView novelId={novelId} rev={rev} />;
-  if (tab === "account") return <AccountView />;
+  if (tab === "account") return <AccountView rev={rev} />;
   if (tab === "library") return <LibraryView rev={rev} notice={notice} resync={sync} />;
   return <ReadingHome rev={rev} notice={notice} resync={sync} />;
 }
