@@ -28,7 +28,7 @@ README.md has the full setup, env vars and CLI.
 - Per-request timeout `CHAPTERLY_FETCH_TIMEOUT_SEC` (default 120; got-scraping's own default is 60).
 
 ## Deploy
-Runs on the turing k3s cluster (homeserver) from the CI-built ghcr images; worker + web share one pod and one
+Runs on the homelab k3s cluster (`nuc-k3s`, NUC VM; was the turing Pi cluster until 2026-11-22) from the CI-built ghcr images; worker + web share one pod and one
 SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapterly.md`.
 - CI (`.github/workflows/image.yml`): each arch builds on a native runner (`ubuntu-26.04` / `ubuntu-26.04-arm`, no
   QEMU) in parallel with the tests, pushed by digest; `merge` then tags `latest` + `sha-<short commit>` only if all passed. The cluster runs `:latest`
