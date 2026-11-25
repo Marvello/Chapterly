@@ -89,7 +89,7 @@ export default function ReadingHome({ rev, notice, resync }: { rev: number; noti
               {/* No unread chapters = the newest one is open but not read to its end (lib/view hasMoreToRead). */}
               <p className="mt-1.5">{hero.unread ? <span className={pill}>{hero.unread} unread</span>
                 : <span className="text-sm text-tsecondary">Finishing the latest chapter</span>}</p>
-              <div className="mt-3 h-1 rounded bg-edge" aria-hidden>
+              <div className="mb-4 mt-3 h-1 rounded bg-edge" aria-hidden>
                 <div className="h-full rounded bg-accent" style={{ width: `${readProgress(hero) * 100}%` }} />
               </div>
               <span className="mt-auto self-start rounded-lg bg-accent px-4 py-2 text-sm font-medium text-page">Continue</span>

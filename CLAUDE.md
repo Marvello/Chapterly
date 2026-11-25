@@ -85,3 +85,4 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   renders — drive it with real scroll input + screenshots.
   Phone width: the extension can't resize the window and the app refuses framing, so use headless Chrome over CDP
   (`Emulation.setDeviceMetricsOverride`), signing in via `POST /api/auth/callback/credentials` with the csrf token.
+  Headless Chrome reload-loops under `next dev` (HMR) and the library never syncs: use `next build && next start`.
