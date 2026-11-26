@@ -23,7 +23,7 @@ function fakeDb(rows: ReaderChapterRow[] = []): FakeDb {
 const headers = (h: Record<string, string> = {}) =>
   new Headers({ "content-type": "application/json", origin: ORIGIN, ...h });
 const body = (o: Record<string, unknown> = {}) =>
-  JSON.stringify({ novelId: 3, chapterId: 7, fraction: 0.5, readAt: "2026-10-04T23:00:00.000Z", ...o });
+  JSON.stringify({ novelId: 3, chapterId: 7, fraction: 0.5, readAt: "2026-10-04T23:00:00.000Z", uid: 42, ...o });
 
 describe("toc", () => {
   it("404 for an unknown or malformed novel id", () => {
@@ -69,12 +69,13 @@ describe("chapters", () => {
 describe("parseProgress", () => {
   it("accepts a valid body and clamps fraction", () => {
     expect(parseProgress(body({ fraction: 1.7 }), NOW)).toEqual(
-      { novelId: 3, chapterId: 7, fraction: 1, readAt: "2026-10-04T23:00:00.000Z", force: false });
+      { novelId: 3, chapterId: 7, fraction: 1, readAt: "2026-10-04T23:00:00.000Z", force: false, uid: 42 });
     expect(parseProgress(body({ force: true }), NOW)?.force).toBe(true);
   });
-  it("rejects bad json, ids, fraction, readAt, force", () => {
+  it("rejects bad json, ids, fraction, readAt, force, a missing user", () => {
     for (const b of ["{", "null", body({ novelId: "x" }), body({ chapterId: 1.5 }), body({ fraction: "a" }),
-      body({ readAt: "nope" }), body({ readAt: "2026-10-05T00:06:00Z" }), body({ force: "yes" })]) {
+      body({ readAt: "nope" }), body({ readAt: "2026-10-05T00:06:00Z" }), body({ force: "yes" }), body({ uid: undefined }),
+      body({ uid: "42" })]) {
       expect(parseProgress(b, NOW)).toBeNull();
     }
   });
@@ -90,7 +91,12 @@ describe("putProgress", () => {
     expect(putProgress(fakeDb(), 1, headers(), "{", ORIGIN, NOW).status).toBe(400);
     const db = fakeDb();
     db.saveProgress.mockImplementation(() => { throw new Error("chapter 7 is not in novel 3"); });
+    expect(putProgress(db, 42, headers(), body(), ORIGIN, NOW).status).toBe(400);
+  });
+  it("400 for progress queued by another user (left on a shared device at sign-out)", () => {
+    const db = fakeDb();
     expect(putProgress(db, 1, headers(), body(), ORIGIN, NOW).status).toBe(400);
+    expect(db.saveProgress).not.toHaveBeenCalled();
   });
   it("saves for the signed-in user", () => {
     const db = fakeDb();

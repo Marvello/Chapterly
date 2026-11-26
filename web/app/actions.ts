@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { currentUserId, requireUser, signOut } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { UID_COOKIE } from "@/lib/reader/account";
 import { checkSupportedSite, parseId, parseInterval, parseNovelUrl, parseSeriesStatus } from "@/lib/validate";
 
 export type AddState = { error?: string; ok?: boolean } | undefined;
@@ -82,6 +84,7 @@ export async function deleteAction(form: FormData) {
 }
 
 export async function signOutAction() {
+  (await cookies()).delete(UID_COOKIE);   // progress queued from here on is refused for any account
   await signOut({ redirectTo: "/login" });
 }
 

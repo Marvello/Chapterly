@@ -17,6 +17,6 @@ export const httpApi: ReaderApi = {
   putProgress: e => req("/api/reader/progress", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ novelId: e.novelId, chapterId: e.chapterId, fraction: e.fraction, readAt: e.readAt, force: e.force }),
+    body: JSON.stringify({ novelId: e.novelId, chapterId: e.chapterId, fraction: e.fraction, readAt: e.readAt, force: e.force, uid: e.uid }),
   }),
 };

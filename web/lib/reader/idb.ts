@@ -2,6 +2,7 @@
 // tocs / library / outbox / pins (out-of-line keys).
 import { CLEAN_VERSION } from "@/lib/cleanVersion";
 import type { ReaderNovel, TocEntry } from "@/lib/db";
+import { queuedUid } from "./account";
 import { mergeOutbox } from "./progress";
 import type { ReaderStore } from "./sync";
 import type { OutboxEntry, StoredChapter } from "./types";
@@ -88,7 +89,7 @@ export function idbStore(): ReaderStore {
     // Read and write in one transaction, so an entry queued in between can't be lost.
     queue: e => many("outbox", os => {
       const r = os.get(e.novelId);
-      r.onsuccess = () => os.put(mergeOutbox(r.result, e), e.novelId);
+      r.onsuccess = () => os.put(mergeOutbox(r.result, { ...e, uid: queuedUid() }), e.novelId);
     }),
     clearOutbox: (id, readAt) => many("outbox", os => {
       const r = os.get(id);

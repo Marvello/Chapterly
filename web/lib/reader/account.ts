@@ -6,6 +6,15 @@ export interface Account {
 }
 const KEY = "chapterly-account";
 
+/** Signed-in user id, readable by the page: the library request sets it, sign-out deletes it. Unsent progress is
+ * stamped with it when queued and the server refuses any other user's, so progress left behind by a sign-out
+ * (a save racing it, another tab) is never applied to the next account on the device. */
+export const UID_COOKIE = "chapterly-uid";
+export function queuedUid(): number | null {
+  const m = document.cookie.match(new RegExp(`(?:^|; )${UID_COOKIE}=(\\d+)`));
+  return m ? Number(m[1]) : null;
+}
+
 export function cachedAccount(): Account | null {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "null"); } catch { return null; }
 }

@@ -59,7 +59,8 @@ export function chapters(db: ReaderDb, clean: (html: string) => string, rawId: s
   return { status: 200, body: out };
 }
 
-export function parseProgress(text: string, now = Date.now()): ProgressInput | null {
+/** `uid`: the user the device queued it for (lib/reader/account.ts queuedUid), checked against the session. */
+export function parseProgress(text: string, now = Date.now()): (ProgressInput & { uid: number }) | null {
   let b: unknown;
   try { b = JSON.parse(text); } catch { return null; }
   if (!b || typeof b !== "object") return null;
@@ -69,7 +70,9 @@ export function parseProgress(text: string, now = Date.now()): ProgressInput | n
   const readAt = typeof o.readAt === "string" ? Date.parse(o.readAt) : NaN;
   if (!novelId || !chapterId || !Number.isFinite(fraction) || Number.isNaN(readAt) || readAt > now + 5 * 60_000) return null;
   if (o.force !== undefined && typeof o.force !== "boolean") return null;
-  return { novelId, chapterId, fraction: Math.min(1, Math.max(0, fraction)), readAt: new Date(readAt).toISOString(), force: o.force === true };
+  if (!Number.isInteger(o.uid) || (o.uid as number) <= 0) return null;
+  return { novelId, chapterId, fraction: Math.min(1, Math.max(0, fraction)), readAt: new Date(readAt).toISOString(),
+    force: o.force === true, uid: o.uid as number };
 }
 
 /** security.md CSRF: JSON content type + same Origin as the app, else 403. */
@@ -78,8 +81,11 @@ export function putProgress(db: ReaderDb, userId: number, headers: Headers, text
   if (!(headers.get("content-type") ?? "").startsWith("application/json") || headers.get("origin") !== appOrigin) {
     return err(403, "forbidden");
   }
-  const p = parseProgress(text, now);
-  if (!p) return err(400, "bad progress");
+  const parsed = parseProgress(text, now);
+  if (!parsed) return err(400, "bad progress");
+  // Queued by whoever was signed in before (sign-out racing a save, another tab): never apply it to this user.
+  const { uid, ...p } = parsed;
+  if (uid !== userId) return err(400, "progress from another user");
   try {
     return { status: 200, body: db.saveProgress(userId, p) };
   } catch (e) {
