@@ -231,6 +231,24 @@ export default function ReadingView({ novelId, chapterId, onLeave }: { novelId: 
   // unread counts, so it re-reads them once this position is stored (and syncs).
   useLayoutEffect(() => () => { track().finally(onLeave); }, [track, onLeave]);
 
+  // Rotating reflows the text but leaves scrollY as it was, which is then a different spot (chapters earlier,
+  // after a few turns). Keep the spot from the last scroll and go back to it when the width changes: resize
+  // fires before the scroll events of that frame, so `spot` still holds the place from before the turn.
+  useEffect(() => {
+    let width = window.innerWidth;
+    let spot = currentPosition();
+    const remember = () => { spot = currentPosition(); };
+    const onResize = () => {
+      if (window.innerWidth === width) return;   // the URL bar sliding in/out changes only the height
+      width = window.innerWidth;
+      const s = spot, el = s && root.current?.querySelector<HTMLElement>(`[data-chapter="${s.chapterId}"]`);
+      if (s && el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + s.fraction * el.offsetHeight);
+    };
+    window.addEventListener("scroll", remember, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => { window.removeEventListener("scroll", remember); window.removeEventListener("resize", onResize); };
+  }, [currentPosition]);
+
   useEffect(() => {
     let last = window.scrollY;
     const onScroll = () => { const y = window.scrollY; setBarHidden(y > last && y > 80); last = y; };
