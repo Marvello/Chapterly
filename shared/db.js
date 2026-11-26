@@ -12,6 +12,14 @@ const normEmail = e => String(e).trim().toLowerCase();
 const normHost = h => String(h).trim().toLowerCase().replace(/^www\./, "");
 const CHAPTER_COLS = "id, idx, url, title, fetched_at, error, attempts, retry_at, (html IS NOT NULL) AS fetched";
 
+/** Comparison key for novel URLs: host without "www.", path without trailing slashes, query kept; scheme ignored. */
+function urlKey(url) {
+    try {
+        const u = new URL(url);
+        return normHost(u.host) + u.pathname.replace(/\/+$/, "") + u.search;
+    } catch { return url; }
+}
+
 function openDb(file = process.env.CHAPTERLY_DB || path.join(__dirname, "..", "data", "chapterly.db")) {
     if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
     const db = new DatabaseSync(file);
@@ -35,15 +43,25 @@ function openDb(file = process.env.CHAPTERLY_DB || path.join(__dirname, "..", "d
         try { const r = fn(); db.exec("COMMIT"); return r; } catch (e) { db.exec("ROLLBACK"); throw e; }
     };
 
+    // A novel already added under the same URL written another way (www., trailing slash, http vs https).
+    // ponytail: scans every novel's URL; fine for a personal library, an indexed url_key column if it grows to thousands.
+    const findNovelByUrl = url => {
+        const k = urlKey(url);
+        const hit = all("SELECT id, toc_url FROM novels").find(n => urlKey(n.toc_url) === k);
+        return hit && one("SELECT * FROM novels WHERE id = ?", hit.id);
+    };
+
     return {
         close: () => db.close(),
 
         addNovel(tocUrl) {
+            const existing = findNovelByUrl(tocUrl);
+            if (existing) return existing;
             run("INSERT INTO novels (toc_url, created_at) VALUES (?, ?) ON CONFLICT (toc_url) DO NOTHING", tocUrl, now());
             return one("SELECT * FROM novels WHERE toc_url = ?", tocUrl);
         },
         getNovel: id => one("SELECT * FROM novels WHERE id = ?", id),
-        findNovelByUrl: url => one("SELECT * FROM novels WHERE toc_url = ?", url),
+        findNovelByUrl,
         /**
          * @param newSince ISO time; chapters fetched at/after it count as "new". novelId: just that novel.
          * Uses fetched_at (set together with html) so chapters_stats_idx covers it without reading html.

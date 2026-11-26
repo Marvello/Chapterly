@@ -45,6 +45,12 @@ const fresh = name => path.join(tmp, name);
     const n = w.addNovel("https://example.com/novel/a");
     assert.strictEqual(w.findNovelByUrl("https://example.com/novel/a").id, n.id);
     assert.strictEqual(w.findNovelByUrl("https://example.com/other"), undefined);
+    // Same novel written another way: www., trailing slash, http. Query strings stay distinct.
+    for (const u of ["https://www.example.com/novel/a", "https://example.com/novel/a/", "http://EXAMPLE.com/novel/a"]) {
+        assert.strictEqual(w.findNovelByUrl(u)?.id, n.id, u);
+        assert.strictEqual(w.addNovel(u).id, n.id, `addNovel ${u}`);
+    }
+    assert.strictEqual(w.findNovelByUrl("https://example.com/novel/a?x"), undefined);
     assert.strictEqual(n.check_interval_min, 1440);
 
     w.requestCheck(n.id);
