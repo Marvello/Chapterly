@@ -55,7 +55,12 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   store tests), `label.ts` (chapter label: title, else `Chapter idx+1` — idx is 0-based),
   `settings.ts` (useSyncExternalStore store; server renders defaults).
 - API: `app/api/reader/*` are thin wrappers over `lib/reader/api.ts`. Signed-out `/api/*` gets 401 JSON
-  (`lib/proxyRules.ts`). `PUT /progress` requires JSON + same Origin (CSRF).
+  (`lib/proxyRules.ts`). `PUT /progress` requires JSON + same Origin (CSRF) + `uid` = the session's user: outbox entries are
+  stamped when queued from the page-readable `chapterly-uid` cookie (set by `GET /library`, deleted by `signOutAction`), so
+  progress written during/after a sign-out is refused (400 → dropped) instead of landing on the next account.
+- Reader scrolling (`ReadingView`): browser scroll anchoring is off; the view holds the spot itself across appends
+  (`anchor`) and viewport width changes (rotation: last scroll spot restored on resize). `blocks.ts appendBlock` trims
+  past `MAX_BLOCKS` only chapters scrolled off the top, else short chapters slide the page (and progress) to the novel's end.
 - Every rule applied to chapter HTML (DOMPurify, dropping the site's repeated "Chapter N" heading, …) lives in
   ONE function, `clean()`: `worker/src/clean.js` + its web copy `web/lib/clean.ts` (parity test). Never clean
   elsewhere (not in the EPUB packer, not at render). `chapters.html_clean` = the `CLEAN_VERSION` a row was
@@ -80,6 +85,7 @@ SQLite volume. Deploy/update steps: `../common-tech/memory/homeserver/app-chapte
   posters default on phones (`viewPref.ts`), add form behind "+", "Check all" (`checkAllAction` → `requestCheckAll`: active novels, minus completed + fully fetched like `isDue`). Novel view opens scrolled to the current chapter, so its
   "Library" back bar is sticky; its header links to the online-only manage page `/novels/[id]`; both list chapters by (`idx, id`), newest first by
   default (`OrderToggle`; per-device cookie `chapterly-chapter-order` so the server-rendered manage page reads it too).
+- Adding a novel: `db.js findNovelByUrl`/`addNovel` match URLs ignoring `www.`, trailing slash and scheme (stored as entered).
 - Per-novel `novels.epub_enabled` gates the EPUB build and the Audiobookshelf rescan.
 - Browser-automation testing: the automation tab is hidden, so IntersectionObserver/timers only run while it
   renders — drive it with real scroll input + screenshots.
