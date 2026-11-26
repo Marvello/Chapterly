@@ -17,7 +17,7 @@ import { AuthError, type ReaderStore } from "@/lib/reader/sync";
 import type { Position } from "@/lib/reader/types";
 
 type Block = TocEntry & { html: string | null };   // html null = not downloaded
-const MAX_BLOCKS = 5;                                // chapters kept in the DOM
+const MAX_BLOCKS = 5;                                // chapters kept in the DOM (more while all are on screen)
 
 /** The chapter (phone copy, else server); a stub when unreachable. AuthError propagates. */
 async function loadBlock(store: ReaderStore, novelId: number, toc: TocEntry[], entry: TocEntry) {
@@ -156,7 +156,9 @@ export default function ReadingView({ novelId, chapterId, onLeave }: { novelId: 
       if (g !== gen.current) return;
       if (fresh !== toc) setToc(fresh);
       anchor.current = topVisibleChapter();
-      setBlocks(prev => appendBlock(prev, last.id, block, MAX_BLOCKS));
+      const above = new Set([...(root.current?.querySelectorAll<HTMLElement>("[data-chapter]") ?? [])]
+        .filter(e => e.getBoundingClientRect().bottom <= 0).map(e => Number(e.dataset.chapter)));
+      setBlocks(prev => appendBlock(prev, last.id, block, MAX_BLOCKS, above));
     } catch (e) {
       onLoadError(e);
     } finally {
